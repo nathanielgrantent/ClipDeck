@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build -w @gamingclips/shared
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate -w @gamingclips/web
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      # Placeholder: Tauri desktop builds will be added here once the desktop
+      # app is set up. Each platform job should produce an installer artifact
+      # and upload it as a release asset.
+
+      # - name: Build Tauri (Windows)
+      #   uses: tauri-apps/tauri-action@v0
+      #   with:
+      #     tagName: v${{ steps.version.outputs.VERSION }}
+      #     releaseName: 'ClipDeck v${{ steps.version.outputs.VERSION }}'
+      #     releaseBody: 'See the assets for installers.'
+      #     releaseDraft: true
+      #     prerelease: false
+      #     args: --target x86_64-pc-windows-msvc
+
+      # - name: Build Tauri (macOS)
+      #   uses: tauri-apps/tauri-action@v0
+      #   with:
+      #     tagName: v${{ steps.version.outputs.VERSION }}
+      #     releaseName: 'ClipDeck v${{ steps.version.outputs.VERSION }}'
+      #     releaseBody: 'See the assets for installers.'
+      #     releaseDraft: true
+      #     prerelease: false
+      #     args: --target universal-apple-darwin
+
+      # - name: Build Tauri (Linux)
+      #   uses: tauri-apps/tauri-action@v0
+      #   with:
+      #     tagName: v${{ steps.version.outputs.VERSION }}
+      #     releaseName: 'ClipDeck v${{ steps.version.outputs.VERSION }}'
+      #     releaseBody: 'See the assets for installers.'
+      #     releaseDraft: true
+      #     prerelease: false
+      #     args: --target x86_64-unknown-linux-gnu
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ClipDeck v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## ClipDeck v${{ steps.version.outputs.VERSION }}
+
+            ### Web
+            Deploy using Docker: `docker compose up -d`
+
+            ### Desktop
+            Download the installer for your platform from the assets below.
+          draft: true
+          files: |
+            # Desktop installers will be added here once built:
+            # src-tauri/target/release/bundle/msi/*.msi
+            # src-tauri/target/release/bundle/dmg/*.dmg
+            # src-tauri/target/release/bundle/appimage/*.AppImage

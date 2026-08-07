@@ -1,0 +1,21 @@
+{
+  "name": "@gamingclips/seed",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "node ../../apps/web/prisma/seed.mjs",
+    "steam:sync": "node scripts/steam-sync.mjs",
+    "rawg:sync": "node scripts/rawg-sync.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4",
+    "prisma": "^5.19.0"
+  }
+}

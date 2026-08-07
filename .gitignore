@@ -1,0 +1,46 @@
+# deps
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# tauri
+src-tauri/target/
+
+# env
+.env
+.env.local
+.env*.local
+
+# prisma
+apps/web/prisma/dev.db
+
+# uploads / local data
+/data/
+uploads/
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# ide
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# coverage / test
+coverage/
+.nyc_output/
+
+# local binaries
+cloudflared.exe

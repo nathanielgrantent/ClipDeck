@@ -1,0 +1,51 @@
+{
+  "name": "@gamingclips/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=100",
+    "typecheck": "tsc --noEmit",
+    "worker": "tsx worker/index.ts",
+    "worker:dev": "tsx watch worker/index.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:generate:prod": "prisma generate --schema prisma/schema.postgres.prisma",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:push": "prisma db push",
+    "prisma:push:prod": "prisma db push --schema prisma/schema.postgres.prisma",
+    "db:seed": "node prisma/seed.mjs",
+    "db:studio": "prisma studio",
+    "gen:postgres": "node ../../scripts/gen-postgres-schema.mjs"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.4.2",
+    "@gamingclips/shared": "*",
+    "@prisma/client": "^5.19.0",
+    "bullmq": "^5.12.0",
+    "hls.js": "^1.5.13",
+    "ioredis": "^5.4.1",
+    "next": "^16.3.0",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "swr": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.0",
+    "postcss": "^8.4.40",
+    "prisma": "^5.19.0",
+    "tailwindcss": "^3.4.7",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,432 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Design notes
+//   - This schema is SQLite-native (runs anywhere with zero setup) while also
+//     working on PostgreSQL: generate prisma/schema.postgres.prisma (swap the
+//     datasource block only) for production deployments.
+//   - Enum-like fields are stored as String (allowed values documented below).
+//   - List/JSON fields are stored as String-encoded JSON; use the helpers in
+//     @gamingclips/shared (parseStringArray / serializeStringArray) and
+//     src/lib/json.ts (parseJson / serializeJson).
+// ---------------------------------------------------------------------------
+
+// Enum-like string values:
+//   role: USER | MOD | ADMIN
+//   userStatus/status: online | idle | offline
+//   platform: STEAM | PC | PS5 | PS4 | XBOX | SWITCH | OTHER
+//   postType: CLIP | IMAGE
+//   postStatus: VISIBLE | FILTERED | REMOVED
+//   mediaStatus: PROCESSING | READY | FAILED
+//   mediaType: VIDEO | IMAGE
+//   reportTargetType: POST | COMMENT
+//   reportStatus: OPEN | RESOLVED | DISMISSED
+//   modActionType: REMOVE | APPROVE | FILTER | BAN | UNBAN | REPORT | NOTIFY | WARN | APPEAL
+//   automodScope: GLOBAL | COMMUNITY
+//   modQueueStatus: PENDING | APPROVED | REMOVED | DISMISSED
+//   notificationType: REPLY | VOTE | MENTION | MOD_ACTION | SYSTEM
+
+// ---------------------------------------------------------------------------
+// Core
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String    @id @default(cuid())
+  username          String    @unique
+  email             String?   @unique
+  name              String?
+  image             String?
+  emailVerified     DateTime?
+  passwordHash      String?
+  role              String    @default("USER")
+  status            String    @default("offline")
+  banned            Boolean   @default(false)
+  banReason         String?
+  karma             Int       @default(0)
+  storageUsedBytes  BigInt    @default(0)
+  storageQuotaBytes BigInt    @default(524288000) // 500MB
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  posts                Post[]
+  comments             Comment[]
+  votes                Vote[]
+  mediaAssets          MediaAsset[]
+  subscriptions        Subscription[]
+  communitiesOwned     Community[]    @relation("Owner")
+  communitiesModerated Community[]    @relation("Moderators")
+  reportsMade          Report[]       @relation("Reporter")
+  reportsHandled       Report[]       @relation("HandledBy")
+  modLogs              ModLog[]       @relation("Actor")
+  notifications        Notification[]
+  drafts               Draft[]
+  presences            Presence[]
+  automodRules         AutomodRule[]  @relation("RuleAuthor")
+  modQueueItems        ModQueueItem[] @relation("ReviewedBy")
+
+  @@index([role])
+  @@index([banned])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Communities (forums)
+// ---------------------------------------------------------------------------
+
+model Community {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  rules       String   @default("[]") // JSON array of rule strings
+  avatarUrl   String?
+  bannerUrl   String?
+  sfw         Boolean  @default(true)
+  ownerId     String
+  owner       User     @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  moderators  User[]   @relation("Moderators")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts         Post[]
+  subscriptions Subscription[]
+  automodRules  AutomodRule[]  @relation("CommunityRules")
+  reports       Report[]
+
+  @@index([slug])
+  @@index([ownerId])
+}
+
+model Subscription {
+  userId      String
+  communityId String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, communityId])
+  @@index([communityId])
+}
+
+// ---------------------------------------------------------------------------
+// Posts, media, games
+// ---------------------------------------------------------------------------
+
+model Post {
+  id             String    @id @default(cuid())
+  title          String
+  body           String?
+  type           String    @default("CLIP") // CLIP | IMAGE
+  status         String    @default("VISIBLE") // VISIBLE | FILTERED | REMOVED
+  score          Int       @default(0)
+  automodReasons String    @default("[]") // JSON array of strings
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  communityId    String
+  community      Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  games    PostGame[]
+  media    MediaAsset[]
+  comments Comment[]
+  votes    Vote[]
+  reports  Report[]       @relation("PostReports")
+  modLogs  ModLog[]       @relation("PostModLogs")
+  modQueue ModQueueItem[]
+  drafts   Draft[]
+
+  @@index([communityId, createdAt])
+  @@index([authorId])
+  @@index([status, createdAt])
+  @@index([score])
+}
+
+model PostGame {
+  postId String
+  gameId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([postId, gameId])
+  @@index([gameId])
+}
+
+model Game {
+  id             String   @id @default(cuid())
+  name           String
+  normalizedName String   @unique
+  platform       String   @default("OTHER") // STEAM | PC | PS5 | PS4 | XBOX | SWITCH | OTHER
+  coverUrl       String?
+  steamAppId     Int?     @unique
+  aliases        String   @default("[]") // JSON array of strings
+  popularity     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  posts PostGame[]
+
+  @@index([normalizedName])
+  @@index([platform])
+  @@index([popularity])
+}
+
+model MediaAsset {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String // VIDEO | IMAGE
+  mime            String
+  sizeBytes       BigInt
+  width           Int?
+  height          Int?
+  durationSeconds Float?
+  status          String   @default("PROCESSING") // PROCESSING | READY | FAILED
+  originalPath    String
+  hlsPlaylistPath String?
+  thumbnailPath   String?
+  originalUrl     String?
+  hlsUrl          String?
+  thumbnailUrl    String?
+  postId          String?
+  post            Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([postId])
+}
+
+// ---------------------------------------------------------------------------
+// Voting & comments
+// ---------------------------------------------------------------------------
+
+model Vote {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String?
+  commentId String?
+  value     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([postId])
+  @@index([commentId])
+}
+
+model Comment {
+  id             String    @id @default(cuid())
+  postId         String
+  parentId       String?
+  body           String
+  score          Int       @default(0)
+  status         String    @default("VISIBLE") // VISIBLE | FILTERED | REMOVED
+  automodReasons String    @default("[]")
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post           Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent         Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Comment[] @relation("CommentReplies")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  reports  Report[]       @relation("CommentReports")
+  modLogs  ModLog[]       @relation("CommentModLogs")
+  modQueue ModQueueItem[]
+  votes    Vote[]
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// ---------------------------------------------------------------------------
+// Moderation
+// ---------------------------------------------------------------------------
+
+model AutomodRule {
+  id             String     @id @default(cuid())
+  name           String
+  scope          String     @default("GLOBAL") // GLOBAL | COMMUNITY
+  communityId    String?
+  community      Community? @relation("CommunityRules", fields: [communityId], references: [id], onDelete: Cascade)
+  enabled        Boolean    @default(true)
+  priority       Int        @default(100)
+  conditions     String     @default("{}") // JSON object (AutomodConditions)
+  actions        String     @default("[]") // JSON array (AutomodActions[])
+  scoreThreshold Int?
+  escalateTo     String?
+  authorId       String
+  author         User       @relation("RuleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([scope, enabled])
+  @@index([communityId])
+}
+
+model ModQueueItem {
+  id           String    @id @default(cuid())
+  kind         String // POST | COMMENT
+  postId       String?
+  commentId    String?
+  rules        String    @default("[]") // JSON array of rule names
+  categories   String    @default("[]") // JSON array of categories
+  status       String    @default("PENDING") // PENDING | APPROVED | REMOVED | DISMISSED
+  reviewedById String?
+  reviewedBy   User?     @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+  post         Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment      Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+model Report {
+  id          String     @id @default(cuid())
+  targetType  String // POST | COMMENT
+  targetId    String
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  postId      String?
+  commentId   String?
+  post        Post?      @relation("PostReports", fields: [postId], references: [id], onDelete: Cascade)
+  comment     Comment?   @relation("CommentReports", fields: [commentId], references: [id], onDelete: Cascade)
+  reason      String
+  status      String     @default("OPEN") // OPEN | RESOLVED | DISMISSED
+  reporterId  String
+  reporter    User       @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  handledById String?
+  handledBy   User?      @relation("HandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  handledAt   DateTime?
+
+  @@index([status])
+  @@index([targetId])
+}
+
+model ModLog {
+  id         String   @id @default(cuid())
+  action     String // modActionType
+  actorId    String
+  actor      User     @relation("Actor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetType String // POST | COMMENT | USER
+  targetId   String
+  postId     String?
+  commentId  String?
+  post       Post?    @relation("PostModLogs", fields: [postId], references: [id], onDelete: Cascade)
+  comment    Comment? @relation("CommentModLogs", fields: [commentId], references: [id], onDelete: Cascade)
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications, presence, drafts, releases
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("SYSTEM") // notificationType
+  title     String
+  body      String   @default("")
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model Presence {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     String   @default("online")
+  lastSeenAt DateTime @default(now())
+
+  @@index([lastSeenAt])
+}
+
+model Draft {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId      String?
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  communityId String?
+  title       String?
+  body        String?
+  gameIds     String   @default("[]")
+  assetPaths  String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model DesktopRelease {
+  id          String   @id @default(cuid())
+  version     String
+  platform    String
+  url         String
+  signature   String?
+  notes       String   @default("")
+  publishedAt DateTime @default(now())
+
+  @@unique([version, platform])
+  @@index([platform])
+}
