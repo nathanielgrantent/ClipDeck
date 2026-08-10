@@ -291,7 +291,7 @@ async function seedReleases() {
     console.log('[seed] releases already present, skipping');
     return;
   }
-  const GITHUB_REPO = process.env.GITHUB_REPO || 'https://github.com/clipdeck/clipdeck';
+  const GITHUB_REPO = process.env.GITHUB_REPO || 'https://github.com/nathanielgrantent/ClipDeck';
   const releases = [
     {
       version: '1.0.0',
