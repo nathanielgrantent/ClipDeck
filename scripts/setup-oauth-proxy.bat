@@ -61,6 +61,6 @@ echo === Done ===
 echo Worker URL: https://clipdeck-oauth-proxy.workers.dev
 echo.
 echo Register this ONE TIME in Google/Discord:
-echo   Google:  https://clipdeck-oauth-proxy.workers.dev/callback/google
-echo   Discord: https://clipdeck-oauth-proxy.workers.dev/callback/discord
+echo   Google:  https://clipdeck-oauth-proxy.workers.dev/api/auth/callback/google
+echo   Discord: https://clipdeck-oauth-proxy.workers.dev/api/auth/callback/discord
 echo.

@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "5634077ba0f54b3c9bedbc1efbf59b7f"
 
 [vars]
 PROXY_ENABLED = "true"
