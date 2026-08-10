@@ -23,7 +23,7 @@ sleep 2
 
 # Start new tunnel
 echo "[2/5] Starting new tunnel..."
-"$CLOUDFLARED" tunnel --url http://localhost:3001 > "$LOG_FILE" 2>&1 &
+"$CLOUDFLARED" tunnel --url http://127.0.0.1:3001 > "$LOG_FILE" 2>&1 &
 TUNNEL_PID=$!
 
 # Wait for URL

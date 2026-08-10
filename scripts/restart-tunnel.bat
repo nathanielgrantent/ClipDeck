@@ -17,7 +17,7 @@ timeout /t 2 /nobreak >nul
 
 echo [2/5] Starting new tunnel...
 echo. > "%LOG_FILE%"
-start /b "" "%CLOUDFLARED%" tunnel --url http://localhost:3001 > "%LOG_FILE%" 2>&1
+start /b "" "%CLOUDFLARED%" tunnel --url http://127.0.0.1:3001 > "%LOG_FILE%" 2>&1
 
 echo [3/5] Waiting for tunnel URL...
 set NEW_URL=
