@@ -6,8 +6,14 @@ export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'up
 
 /** Resolve a safe absolute path inside the upload dir (blocks path traversal). */
 export function resolveUploadPath(relativePath: string): string {
-  const base = path.resolve(UPLOAD_DIR);
-  const target = path.resolve(base, relativePath);
+  // Block null bytes which can truncate paths at the OS level.
+  if (relativePath.includes('\0')) {
+    throw new Error('Invalid path');
+  }
+  const base = path.resolve(/* turbopackIgnore: true */ UPLOAD_DIR);
+  // Decode any URL-encoded sequences and normalise separators.
+  const decoded = decodeURIComponent(relativePath).split('/').join(path.sep);
+  const target = path.resolve(base, decoded);
   if (!target.startsWith(base + path.sep) && target !== base) {
     throw new Error('Invalid path');
   }
@@ -39,7 +45,15 @@ export function toPublicUrl(relativePath: string) {
 
 export async function writeUpload(file: Buffer | NodeJS.ReadableStream, targetAbs: string) {
   await fs.mkdir(path.dirname(targetAbs), { recursive: true });
-  await fs.writeFile(targetAbs, file as Buffer);
+  if (Buffer.isBuffer(file)) {
+    await fs.writeFile(targetAbs, file);
+  } else {
+    const chunks: Buffer[] = [];
+    for await (const chunk of file) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    await fs.writeFile(targetAbs, Buffer.concat(chunks));
+  }
 }
 
 export async function removeFile(relativePath: string) {
@@ -51,7 +65,7 @@ export async function removeFile(relativePath: string) {
 }
 
 export async function statFile(relativePath: string) {
-  return fs.stat(resolveUploadPath(relativePath));
+  return fs.stat(/* turbopackIgnore: true */ resolveUploadPath(relativePath));
 }
 
 export function randomToken(bytes = 24) {

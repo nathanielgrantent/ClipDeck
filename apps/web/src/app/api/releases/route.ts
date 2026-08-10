@@ -1,13 +1,21 @@
 import { prisma } from '@/lib/prisma';
-import { json } from '@/lib/api';
+import { cachedJson } from '@/lib/api';
 
 export async function GET() {
   const releases = await prisma.desktopRelease.findMany({
     orderBy: { publishedAt: 'desc' },
     take: 20,
+    select: {
+      version: true,
+      platform: true,
+      url: true,
+      signature: true,
+      notes: true,
+      publishedAt: true,
+    },
   });
 
-  return json(
+  return cachedJson(
     releases.map((r) => ({
       version: r.version,
       platform: r.platform,
@@ -16,5 +24,6 @@ export async function GET() {
       notes: r.notes,
       publishedAt: r.publishedAt.toISOString(),
     })),
+    300,
   );
 }

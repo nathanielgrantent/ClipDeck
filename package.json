@@ -20,6 +20,7 @@
     "prisma:push": "npm run prisma:push -w @gamingclips/web",
     "db:seed": "npm run db:seed -w @gamingclips/web",
     "desktop:dev": "npm run tauri dev -w @gamingclips/desktop",
-    "desktop:build": "npm run tauri build -w @gamingclips/desktop"
+    "desktop:build": "npm run tauri build -w @gamingclips/desktop",
+    "test": "npm run test -w @gamingclips/web"
   }
 }

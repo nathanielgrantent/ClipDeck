@@ -1,7 +1,8 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { serializeNotification } from '@/lib/serializers';
-import { json, unauthorized } from '@/lib/api';
+import { json, readJson, badRequest, unauthorized } from '@/lib/api';
+import { markNotificationSchema } from '@/lib/validation';
 
 export async function GET() {
   const session = await auth();
@@ -11,6 +12,16 @@ export async function GET() {
     where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
     take: 50,
+    select: {
+      id: true,
+      userId: true,
+      type: true,
+      title: true,
+      body: true,
+      href: true,
+      read: true,
+      createdAt: true,
+    },
   });
 
   return json(notifications.map(serializeNotification));
@@ -20,15 +31,20 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
 
-  const body = (await req.json().catch(() => ({}))) as { markAll?: boolean; id?: string };
-  if (body.markAll) {
+  const body = await readJson<Record<string, unknown>>(req);
+  if (!body) return badRequest('Invalid JSON body');
+
+  const parsed = markNotificationSchema.safeParse(body);
+  if (!parsed.success) return badRequest(parsed.error.issues[0]?.message);
+
+  if (parsed.data.markAll) {
     await prisma.notification.updateMany({
       where: { userId: session.user.id, read: false },
       data: { read: true },
     });
-  } else if (body.id) {
+  } else if (parsed.data.id) {
     await prisma.notification.updateMany({
-      where: { id: body.id, userId: session.user.id },
+      where: { id: parsed.data.id, userId: session.user.id },
       data: { read: true },
     });
   }

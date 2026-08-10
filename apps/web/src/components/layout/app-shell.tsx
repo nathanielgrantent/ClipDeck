@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -11,23 +12,28 @@ import { Avatar } from '@/components/ui/avatar';
 // Left icon rail (Discord-style server bar)
 // ---------------------------------------------------------------------------
 
-export function ServerRail({ activeSlug }: { activeSlug?: string }) {
-  const { communities } = useCommunities();
+export const ServerRail = memo(function ServerRail({
+  activeSlug,
+  communities,
+}: {
+  activeSlug?: string;
+  communities: ReturnType<typeof useCommunities>['communities'];
+}) {
   const { status } = useSession();
 
-  const railItems = [
+  const railItems = useMemo(() => [
     { key: 'home', label: 'Home', href: '/', icon: <HomeIcon /> },
     ...communities.slice(0, 40).map((c) => ({
       key: c.slug,
       label: c.name,
       href: `/c/${c.slug}`,
       icon: c.avatarUrl ? (
-        <img src={c.avatarUrl} alt="" className="h-full w-full rounded-[16px] object-cover" />
+        <img src={c.avatarUrl} alt="" className="h-full w-full rounded-[16px] object-cover" loading="lazy" decoding="async" />
       ) : (
         <span className="text-sm font-semibold">{initials(c.name)}</span>
       ),
     })),
-  ];
+  ], [communities]);
 
   return (
     <nav className="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto bg-rail py-3">
@@ -76,7 +82,7 @@ export function ServerRail({ activeSlug }: { activeSlug?: string }) {
       </Link>
     </nav>
   );
-}
+});
 
 function HomeIcon() {
   return (
@@ -90,8 +96,13 @@ function HomeIcon() {
 // Community sidebar
 // ---------------------------------------------------------------------------
 
-export function Sidebar({ activeSlug }: { activeSlug?: string }) {
-  const { communities } = useCommunities();
+export const Sidebar = memo(function Sidebar({
+  activeSlug,
+  communities,
+}: {
+  activeSlug?: string;
+  communities: ReturnType<typeof useCommunities>['communities'];
+}) {
   const pathname = usePathname();
 
   const browseItems = [
@@ -100,7 +111,7 @@ export function Sidebar({ activeSlug }: { activeSlug?: string }) {
     { label: 'Downloads', href: '/download', active: pathname === '/download' },
   ];
 
-  const modSlugs = communities.filter((c) => c.isModerator).map((c) => c.slug);
+  const modSlugs = useMemo(() => communities.filter((c) => c.isModerator).map((c) => c.slug), [communities]);
 
   return (
     <aside className="flex w-[240px] shrink-0 flex-col bg-sidebar">
@@ -169,9 +180,9 @@ export function Sidebar({ activeSlug }: { activeSlug?: string }) {
       <UserChip />
     </aside>
   );
-}
+});
 
-function UserChip() {
+const UserChip = memo(function UserChip() {
   const { me } = useMe();
   const { status } = useSession();
 
@@ -205,7 +216,7 @@ function UserChip() {
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // App shell wrapper
@@ -222,10 +233,12 @@ export function AppShell({
   showSidebar?: boolean;
   rightPane?: React.ReactNode;
 }) {
+  const { communities } = useCommunities();
+
   return (
     <div className="flex h-screen w-screen overflow-hidden">
-      <ServerRail activeSlug={activeSlug} />
-      {showSidebar && <Sidebar activeSlug={activeSlug} />}
+      <ServerRail activeSlug={activeSlug} communities={communities} />
+      {showSidebar && <Sidebar activeSlug={activeSlug} communities={communities} />}
       <main className="relative flex-1 overflow-y-auto bg-content">{children}</main>
       {rightPane && <div className="hidden w-[240px] shrink-0 lg:block">{rightPane}</div>}
     </div>

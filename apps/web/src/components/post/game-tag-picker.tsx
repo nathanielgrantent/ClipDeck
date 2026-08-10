@@ -118,6 +118,7 @@ export function GameTagPicker({
                         src={game.coverUrl}
                         alt=""
                         className="h-8 w-8 rounded object-cover shrink-0"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="h-8 w-8 rounded bg-sidebar-hover shrink-0 flex items-center justify-center text-xs text-text-muted">

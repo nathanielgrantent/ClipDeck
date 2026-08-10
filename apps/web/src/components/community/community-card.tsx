@@ -1,11 +1,12 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Community } from '@gamingclips/shared';
 
-export function CommunityCard({ community }: { community: Community }) {
+export const CommunityCard = memo(function CommunityCard({ community }: { community: Community }) {
   return (
     <Link
       href={`/c/${community.slug}`}
@@ -34,4 +35,4 @@ export function CommunityCard({ community }: { community: Community }) {
       </div>
     </Link>
   );
-}
+});

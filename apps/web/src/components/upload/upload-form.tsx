@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { GameTagPicker } from '@/components/post/game-tag-picker';
-import { useCommunities } from '@/hooks';
+import { useCommunities, useMe } from '@/hooks';
 import { uploadWithProgress } from '@/lib/client';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@gamingclips/shared';
@@ -19,6 +19,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp
 export function UploadForm() {
   const router = useRouter();
   const { communities } = useCommunities();
+  const { me } = useMe();
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,8 +33,8 @@ export function UploadForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [storageUsed, setStorageUsed] = useState(0);
-  const [storageQuota, setStorageQuota] = useState(500 * 1024 * 1024);
+  const storageUsed = me?.storageUsedBytes ?? 0;
+  const storageQuota = me?.storageQuotaBytes ?? 500 * 1024 * 1024;
 
   const isVideo = file?.type.startsWith('video/');
   const isImage = file?.type.startsWith('image/');

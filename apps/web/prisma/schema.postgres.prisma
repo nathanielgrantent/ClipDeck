@@ -185,6 +185,7 @@ model Post {
   @@index([authorId])
   @@index([status, createdAt])
   @@index([score])
+  @@index([status, score, createdAt])
 }
 
 model PostGame {

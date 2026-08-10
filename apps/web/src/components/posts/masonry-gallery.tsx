@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Post } from '@gamingclips/shared';
 import { PostCard } from '@/components/posts/post-card';
 import { Spinner } from '@/components/ui/button';
@@ -28,8 +28,11 @@ export function MasonryGallery({
     return () => window.removeEventListener('resize', compute);
   }, []);
 
-  const columns = Array.from({ length: cols }, () => [] as Post[]);
-  posts.forEach((p, i) => columns[i % cols].push(p));
+  const columns = useMemo(() => {
+    const colsArr = Array.from({ length: cols }, () => [] as Post[]);
+    posts.forEach((p, i) => colsArr[i % cols].push(p));
+    return colsArr;
+  }, [posts, cols]);
 
   return (
     <div ref={containerRef} className="mx-auto w-full max-w-[1400px] px-4 py-4">
@@ -42,7 +45,7 @@ export function MasonryGallery({
       ) : (
         <div className="flex gap-4" style={{ columnCount: cols }}>
           {columns.map((col, i) => (
-            <div key={i} className="flex flex-1 flex-col gap-4">
+            <div key={i} className="flex flex-1 flex-col gap-4 contain-layout">
               {col.map((p) => (
                 <PostCard key={p.id} post={p} muted={muted} />
               ))}

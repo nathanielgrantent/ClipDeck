@@ -1,27 +1,22 @@
 import type { Prisma } from '@prisma/client';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { POST_INCLUDE } from '@/lib/prisma-constants';
 import { serializePost } from '@/lib/serializers';
 import { json, badRequest, readJson, serverError, unauthorized } from '@/lib/api';
 import { createPostSchema } from '@/lib/validation';
 import { buildContentContext, evaluateRules } from '@/lib/automod';
 import { applyVerdict, loadRules } from '@/lib/moderation';
 import { isBanned } from '@/lib/moderators';
+import { rateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import type { Platform } from '@gamingclips/shared';
-
-export const POST_INCLUDE = {
-  author: true,
-  community: { include: { _count: { select: { subscriptions: true, posts: true } } } },
-  games: { include: { game: true } },
-  media: true,
-  _count: { select: { comments: true } },
-} as const;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const communitySlug = url.searchParams.get('community');
   const sort = url.searchParams.get('sort') ?? 'hot';
-  const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 100);
+  const rawLimit = Number(url.searchParams.get('limit') ?? 50);
+  const limit = Math.min(Math.max(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50, 1), 100);
   const cursor = url.searchParams.get('cursor');
   const session = await auth();
 
@@ -37,7 +32,8 @@ export async function GET(req: Request) {
       ? [{ createdAt: 'desc' }]
       : sort === 'top'
         ? [{ score: 'desc' }, { createdAt: 'desc' }]
-        : [{ score: 'desc' }, { createdAt: 'desc' }];
+        : // 'hot' — approximate time-decay by sorting by score then recency
+          [{ score: 'desc' }, { createdAt: 'desc' }];
 
   const posts = await prisma.post.findMany({
     where,
@@ -55,6 +51,7 @@ export async function GET(req: Request) {
   if (session?.user?.id) {
     const votes = await prisma.vote.findMany({
       where: { userId: session.user.id, postId: { in: page.map((p) => p.id) } },
+      select: { postId: true, value: true },
     });
     for (const v of votes) {
       if (v.postId) voteMap.set(v.postId, v.value as 1 | -1);
@@ -72,6 +69,11 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return unauthorized();
   if (await isBanned(session.user.id)) {
     return json({ error: 'Your account is banned.' }, { status: 403 });
+  }
+
+  const rl = await rateLimit(`rl:post:create:${session.user.id}`, 60_000, 10);
+  if (!rl.allowed) {
+    return json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
   }
 
   const body = await readJson<Record<string, unknown>>(req);

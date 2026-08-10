@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Hls from 'hls.js';
 
 export function VideoPlayer({
   src,
@@ -28,21 +27,35 @@ export function VideoPlayer({
 
     const isHls = src.endsWith('.m3u8');
 
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 60,
-      });
-      hls.loadSource(src);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (autoPlay) {
-          video.play().catch(() => {});
+    if (isHls) {
+      let cancelled = false;
+      let hlsInstance: { destroy: () => void } | null = null;
+
+      import('hls.js').then(({ default: Hls }) => {
+        if (cancelled) return;
+        if (Hls.isSupported()) {
+          const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            backBufferLength: 60,
+          });
+          hlsInstance = hls;
+          hls.loadSource(src);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (autoPlay) {
+              video.play().catch(() => {});
+            }
+          });
+        } else {
+          video.src = src;
+          if (autoPlay) video.play().catch(() => {});
         }
       });
+
       return () => {
-        hls.destroy();
+        cancelled = true;
+        hlsInstance?.destroy();
       };
     }
 
@@ -64,6 +77,7 @@ export function VideoPlayer({
       preload="metadata"
       poster={poster ?? undefined}
       className={className}
+      aria-label="Video player"
     />
   );
 }

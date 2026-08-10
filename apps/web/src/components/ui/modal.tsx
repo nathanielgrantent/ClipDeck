@@ -9,12 +9,14 @@ export function Modal({
   children,
   className,
   width = 560,
+  title,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
   width?: number;
+  title?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -33,6 +35,9 @@ export function Modal({
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title ?? 'Dialog'}
     >
       <div
         className={cn('card w-full overflow-hidden animate-slide-up', className)}

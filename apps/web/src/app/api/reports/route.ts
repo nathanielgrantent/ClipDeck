@@ -2,10 +2,16 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { json, badRequest, readJson, unauthorized } from '@/lib/api';
 import { reportSchema } from '@/lib/validation';
+import { rateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
+
+  const rl = await rateLimit(`rl:report:${session.user.id}`, 60_000, 5);
+  if (!rl.allowed) {
+    return json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
+  }
 
   const body = await readJson<Record<string, unknown>>(req);
   if (!body) return badRequest();
@@ -51,5 +57,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return json({ id: report.id, ok: true }, { status: 201 });
+  return json({ id: report.id, ok: true }, { status: 201, headers: rateLimitHeaders(rl) });
 }

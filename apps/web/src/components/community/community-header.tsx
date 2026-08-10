@@ -19,7 +19,8 @@ export function CommunityHeader({ community }: { community: Community }) {
     if (pending) return;
     setPending(true);
     const wasSubscribed = subscribed;
-    setSubscribed(!wasSubscribed);
+    const newSubscribed = !wasSubscribed;
+    setSubscribed(newSubscribed);
     setMemberCount((c) => (wasSubscribed ? c - 1 : c + 1));
 
     try {
@@ -38,7 +39,7 @@ export function CommunityHeader({ community }: { community: Community }) {
       {/* Banner */}
       {community.bannerUrl && (
         <div className="h-32 sm:h-48 w-full overflow-hidden rounded-t-card">
-          <img src={community.bannerUrl} alt="" className="h-full w-full object-cover" />
+          <img src={community.bannerUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         </div>
       )}
       {!community.bannerUrl && (

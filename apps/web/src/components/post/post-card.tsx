@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/avatar';
 import { GameChip } from '@/components/game/game-chip';
@@ -7,12 +8,12 @@ import { VoteControls } from '@/components/post/vote-controls';
 import { cn, timeAgo } from '@/lib/utils';
 import type { Post } from '@gamingclips/shared';
 
-export function PostCard({ post }: { post: Post }) {
+export const PostCard = memo(function PostCard({ post }: { post: Post }) {
   const primaryMedia = post.media[0];
   const isVideo = post.type === 'CLIP';
 
   return (
-    <article className="card group hover:border-white/20 transition-colors">
+    <article className="card group hover:border-white/20 transition-colors contain-content">
       <div className="flex gap-3 p-3">
         {/* Vote column (desktop) */}
         <div className="hidden sm:flex flex-col items-center">
@@ -139,4 +140,4 @@ export function PostCard({ post }: { post: Post }) {
       </div>
     </article>
   );
-}
+});

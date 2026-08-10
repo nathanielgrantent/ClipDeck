@@ -1,7 +1,6 @@
 import type { NextAuthConfig } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Discord from 'next-auth/providers/discord';
-import { SteamProvider } from '@/lib/steam-provider';
 
 export const authConfig = {
   providers: [
@@ -13,7 +12,6 @@ export const authConfig = {
       clientId: process.env.AUTH_DISCORD_ID,
       clientSecret: process.env.AUTH_DISCORD_SECRET,
     }),
-    SteamProvider,
   ],
   pages: {
     signIn: '/login',
@@ -23,9 +21,6 @@ export const authConfig = {
   },
   callbacks: {
     async session({ session, user }) {
-      // Rebuild session.user from scratch: the raw adapter user carries Prisma
-      // BigInt fields (storageUsedBytes/storageQuotaBytes) which cannot be
-      // JSON-serialized.
       session.user = {
         id: user.id,
         role: (user.role as 'USER' | 'MOD' | 'ADMIN' | undefined) ?? 'USER',
@@ -36,6 +31,12 @@ export const authConfig = {
         emailVerified: null,
       };
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allow redirect to any page on the same origin
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
 } satisfies NextAuthConfig;

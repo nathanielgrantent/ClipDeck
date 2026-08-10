@@ -1,10 +1,23 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useMe } from '@/hooks';
 import { formatBytes } from '@gamingclips/shared';
+
+const UploadForm = dynamic(
+  () => import('@/components/upload/upload-form').then((m) => m.UploadForm),
+  {
+    loading: () => (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    ),
+    ssr: false,
+  },
+);
 
 function StorageMeter({ used, total }: { used: number; total: number }) {
   const pct = Math.min(100, (used / total) * 100);
@@ -60,14 +73,7 @@ export default function UploadPage() {
         </div>
       )}
 
-      <div className="rounded-card bg-surface border border-black/20 p-6">
-        <p className="text-sm text-text-secondary">
-          Upload a gaming clip or screenshot. Supported formats: MP4, WebM, PNG, JPG, GIF.
-        </p>
-        <p className="mt-2 text-xs text-text-muted">
-          Maximum file size: 500MB. Videos will be transcoded to HLS for streaming.
-        </p>
-      </div>
+      <UploadForm />
     </div>
   );
 }

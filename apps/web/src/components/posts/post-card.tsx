@@ -1,19 +1,20 @@
 'use client';
 
+import { memo, lazy, Suspense } from 'react';
 import Link from 'next/link';
 import type { Post } from '@gamingclips/shared';
 import { formatBytes, formatTime } from '@/lib/format';
 import { cn, timeAgo } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
-import { VideoPlayer } from '@/components/posts/video-player';
 import { VoteButtons } from '@/components/posts/vote-buttons';
 
-export function PostCard({ post, muted = true }: { post: Post; muted?: boolean }) {
-  const media = post.media[0];
-  const isVideo = media?.type === 'VIDEO';
+const VideoPlayer = lazy(() =>
+  import('@/components/posts/video-player').then((m) => ({ default: m.VideoPlayer }))
+);
 
+export const PostCard = memo(function PostCard({ post, muted = true }: { post: Post; muted?: boolean }) {
   return (
-    <article className="group break-inside-avoid overflow-hidden rounded-btn border border-white/5 bg-card shadow-sm transition-shadow hover:border-white/10 hover:shadow-lg">
+    <article className="group break-inside-avoid overflow-hidden rounded-btn border border-white/5 bg-card shadow-sm transition-shadow hover:border-white/10 hover:shadow-lg contain-content">
       <Link href={`/p/${post.id}`} className="block">
         <MediaView post={post} muted={muted} />
       </Link>
@@ -62,6 +63,14 @@ export function PostCard({ post, muted = true }: { post: Post; muted?: boolean }
       </div>
     </article>
   );
+});
+
+function VideoPlaceholder() {
+  return (
+    <div className="flex aspect-video w-full items-center justify-center bg-black/60">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+    </div>
+  );
 }
 
 function MediaView({ post, muted }: { post: Post; muted: boolean }) {
@@ -74,14 +83,16 @@ function MediaView({ post, muted }: { post: Post; muted: boolean }) {
     if (media.status === 'READY' && media.hlsUrl) {
       return (
         <div className="relative w-full overflow-hidden bg-black/60">
-          <VideoPlayer
-            src={media.hlsUrl}
-            poster={media.thumbnailUrl}
-            muted={muted}
-            loop={muted}
-            autoPlay={muted}
-            className="w-full"
-          />
+          <Suspense fallback={<VideoPlaceholder />}>
+            <VideoPlayer
+              src={media.hlsUrl}
+              poster={media.thumbnailUrl}
+              muted={muted}
+              loop={muted}
+              autoPlay={muted}
+              className="w-full"
+            />
+          </Suspense>
           {media.durationSeconds != null && (
             <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
               {formatTime(media.durationSeconds)}
@@ -109,6 +120,7 @@ function MediaView({ post, muted }: { post: Post; muted: boolean }) {
         alt={post.title}
         className="w-full"
         loading="lazy"
+        decoding="async"
       />
       <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
         {formatBytes(media.sizeBytes)}

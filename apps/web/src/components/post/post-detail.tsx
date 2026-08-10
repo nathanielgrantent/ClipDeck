@@ -1,16 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { GameChip } from '@/components/game/game-chip';
-import { MediaPlayer } from '@/components/post/media-player';
 import { VoteControls } from '@/components/post/vote-controls';
 import { cn, timeAgo } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 import { apiPost } from '@/lib/client';
 import type { Post } from '@gamingclips/shared';
+
+const MediaPlayer = dynamic(() => import('@/components/post/media-player').then((m) => m.MediaPlayer), {
+  loading: () => (
+    <div className="relative w-full bg-surface rounded-card overflow-hidden" style={{ aspectRatio: '16/9' }}>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    </div>
+  ),
+  ssr: false,
+});
 
 export function PostDetail({ post }: { post: Post }) {
   const [reported, setReported] = useState(false);
@@ -36,12 +47,7 @@ export function PostDetail({ post }: { post: Post }) {
   return (
     <article className="max-w-3xl mx-auto">
       {/* Media */}
-      {primaryMedia && primaryMedia.status === 'READY' && (
-        <div className="mb-4">
-          <MediaPlayer media={primaryMedia} />
-        </div>
-      )}
-      {primaryMedia && primaryMedia.status !== 'READY' && (
+      {primaryMedia && (
         <div className="mb-4">
           <MediaPlayer media={primaryMedia} />
         </div>

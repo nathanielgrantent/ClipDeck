@@ -185,6 +185,7 @@ model Post {
   @@index([authorId])
   @@index([status, createdAt])
   @@index([score])
+  @@index([status, score, createdAt])
 }
 
 model PostGame {
@@ -390,6 +391,7 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId, read])
+  @@index([userId, read, createdAt])
 }
 
 model Presence {

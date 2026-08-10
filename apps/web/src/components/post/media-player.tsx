@@ -49,7 +49,7 @@ export function MediaPlayer({ media }: { media: MediaAsset }) {
 function VideoPlayer({ media }: { media: MediaAsset }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hlsRef = useRef<unknown>(null);
+  const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -62,19 +62,20 @@ function VideoPlayer({ media }: { media: MediaAsset }) {
     const video = videoRef.current;
     if (!video) return;
 
-    let hls: unknown = null;
+    let hls: { destroy: () => void } | null = null;
 
     const loadVideo = async () => {
       if (media.hlsUrl && media.mime.includes('mp4')) {
         const hlsModule = await import('hls.js');
         const HlsClass = hlsModule.default;
         if (HlsClass.isSupported()) {
-          hls = new HlsClass();
-          hlsRef.current = hls;
-          (hls as { loadSource: (url: string) => void }).loadSource(media.hlsUrl);
-          (hls as { attachMedia: (v: HTMLVideoElement) => void }).attachMedia(video);
-          (hls as { on: (event: string, cb: () => void) => void }).on(
-            (hlsModule as unknown as { Events: { MANIFEST_PARSED: string } }).Events.MANIFEST_PARSED,
+          const hlsInstance = new HlsClass();
+          hls = hlsInstance;
+          hlsRef.current = hlsInstance;
+          hlsInstance.loadSource(media.hlsUrl);
+          hlsInstance.attachMedia(video);
+          hlsInstance.on(
+            hlsModule.Events.MANIFEST_PARSED,
             () => {
               video.play().catch(() => {});
             },
@@ -92,7 +93,7 @@ function VideoPlayer({ media }: { media: MediaAsset }) {
 
     return () => {
       if (hls) {
-        (hls as { destroy: () => void }).destroy();
+        hls.destroy();
         hlsRef.current = null;
       }
     };
@@ -119,6 +120,7 @@ function VideoPlayer({ media }: { media: MediaAsset }) {
       video.removeEventListener('pause', onPause);
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('durationchange', onDurationChange);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
     };
   }, []);
 
@@ -177,7 +179,7 @@ function VideoPlayer({ media }: { media: MediaAsset }) {
         poster={media.thumbnailUrl ?? undefined}
       />
 
-      {!playing && !showControls && (
+      {!playing && (
         <button
           onClick={togglePlay}
           className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity"
@@ -274,7 +276,14 @@ function ImagePlayer({ media }: { media: MediaAsset }) {
 
   return (
     <>
-      <div className="relative w-full rounded-card overflow-hidden bg-black cursor-zoom-in" onClick={() => setZoomed(true)}>
+      <div
+        className="relative w-full rounded-card overflow-hidden bg-black cursor-zoom-in"
+        onClick={() => setZoomed(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setZoomed(true); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Zoom in on image"
+      >
         <img
           src={src}
           alt=""
@@ -286,6 +295,11 @@ function ImagePlayer({ media }: { media: MediaAsset }) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 cursor-zoom-out animate-fade-in"
           onClick={() => setZoomed(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setZoomed(false); }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image zoom"
+          tabIndex={-1}
         >
           <img
             src={src}

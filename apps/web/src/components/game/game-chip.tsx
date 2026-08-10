@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { cn, platformLabel } from '@/lib/utils';
 import type { Platform } from '@gamingclips/shared';
@@ -14,7 +15,7 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   OTHER: '#6b7280',
 };
 
-export function GameChip({
+export const GameChip = memo(function GameChip({
   game,
   removable = false,
   onRemove,
@@ -62,4 +63,4 @@ export function GameChip({
       )}
     </Tag>
   );
-}
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCommunity, usePosts } from '@/hooks';
@@ -255,6 +255,9 @@ function RulesTab({ slug }: { slug: string }) {
               </div>
               <button
                 onClick={() => toggleRule(rule.id, rule.enabled)}
+                role="switch"
+                aria-checked={rule.enabled}
+                aria-label={`Toggle rule ${rule.name}`}
                 className={cn(
                   'relative h-6 w-11 rounded-full transition-colors',
                   rule.enabled ? 'bg-accent' : 'bg-sidebar-hover',
@@ -326,8 +329,8 @@ function ModLogTab({ slug }: { slug: string }) {
   );
 }
 
-export default function ModPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function ModPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const { status } = useSession();
   const { community, isLoading } = useCommunity(slug);
   const [activeTab, setActiveTab] = useState<Tab>('Queue');

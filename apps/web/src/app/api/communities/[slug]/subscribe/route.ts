@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { notFound, unauthorized } from '@/lib/api';
+import { json, notFound, unauthorized } from '@/lib/api';
 
 export async function POST(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const session = await auth();
@@ -12,6 +12,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ slug: 
 
   const existing = await prisma.subscription.findUnique({
     where: { userId_communityId: { userId: session.user.id, communityId: community.id } },
+    select: { userId: true },
   });
 
   if (existing) {
@@ -24,5 +25,5 @@ export async function POST(_req: Request, { params }: { params: Promise<{ slug: 
     });
   }
 
-  return Response.json({ ok: true, subscribed: !existing });
+  return json({ ok: true, subscribed: !existing });
 }

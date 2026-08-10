@@ -6,7 +6,21 @@ export function json(data: unknown, init?: ResponseInit) {
     status: init?.status ?? 200,
     headers: {
       'Content-Type': 'application/json',
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-store',
       ...(init?.headers ?? {}),
+    },
+  });
+}
+
+/** JSON response with short cache for frequently accessed read-only data. */
+export function cachedJson(data: unknown, maxAge = 10) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': `public, s-maxage=${maxAge}, max-age=${Math.floor(maxAge / 2)}`,
     },
   });
 }

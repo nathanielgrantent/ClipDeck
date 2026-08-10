@@ -285,10 +285,47 @@ async function seedAutomodRules() {
   console.log(`[seed] automod rules created: ${rules.length}`);
 }
 
+async function seedReleases() {
+  const existing = await prisma.desktopRelease.count();
+  if (existing > 0) {
+    console.log('[seed] releases already present, skipping');
+    return;
+  }
+  const GITHUB_REPO = process.env.GITHUB_REPO || 'https://github.com/clipdeck/clipdeck';
+  const releases = [
+    {
+      version: '1.0.0',
+      platform: 'WIN',
+      url: `${GITHUB_REPO}/releases/download/v1.0.0/ClipDeck-Setup-1.0.0.exe`,
+      notes: 'Initial release of ClipDeck Desktop.\n- Local clip uploader with drag & drop\n- Screen capture with hotkey\n- System notifications\n- 500MB storage quota meter\n- Tray icon with global hotkey',
+      publishedAt: new Date('2026-08-07'),
+    },
+    {
+      version: '1.0.0',
+      platform: 'MAC',
+      url: `${GITHUB_REPO}/releases/download/v1.0.0/ClipDeck-1.0.0.dmg`,
+      notes: 'Initial release of ClipDeck Desktop for macOS.\n- Local clip uploader with drag & drop\n- Screen capture with hotkey\n- System notifications\n- 500MB storage quota meter\n- Menu bar icon with global hotkey',
+      publishedAt: new Date('2026-08-07'),
+    },
+    {
+      version: '1.0.0',
+      platform: 'LINUX',
+      url: `${GITHUB_REPO}/releases/download/v1.0.0/ClipDeck-1.0.0.AppImage`,
+      notes: 'Initial release of ClipDeck Desktop for Linux.\n- Local clip uploader with drag & drop\n- Screen capture with hotkey\n- System notifications\n- 500MB storage quota meter\n- Tray icon with global hotkey',
+      publishedAt: new Date('2026-08-07'),
+    },
+  ];
+  for (const r of releases) {
+    await prisma.desktopRelease.create({ data: r });
+  }
+  console.log(`[seed] releases created: ${releases.length}`);
+}
+
 async function main() {
   await seedGames();
   await seedCommunities();
   await seedAutomodRules();
+  await seedReleases();
   console.log('[seed] done');
   await prisma.$disconnect();
 }

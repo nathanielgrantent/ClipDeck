@@ -1,8 +1,9 @@
 'use client';
 
+import { memo } from 'react';
 import { cn, initials } from '@/lib/utils';
 
-export function Avatar({
+export const Avatar = memo(function Avatar({
   src,
   name,
   size = 32,
@@ -23,6 +24,8 @@ export function Avatar({
           alt={name}
           width={size}
           height={size}
+          loading="lazy"
+          decoding="async"
           className="rounded-full object-cover"
           style={{ width: size, height: size }}
         />
@@ -47,4 +50,4 @@ export function Avatar({
       )}
     </div>
   );
-}
+});

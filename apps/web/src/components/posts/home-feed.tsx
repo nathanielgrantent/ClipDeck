@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { usePosts } from '@/hooks';
 import { MasonryGallery } from '@/components/posts/masonry-gallery';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,10 @@ const SORTS = [
 
 export function HomeFeed() {
   const [sort, setSort] = useState<'hot' | 'new' | 'top'>('hot');
-  const { posts, isLoading, mutate } = usePosts(undefined, 60, sort);
+  const { posts, isLoading, mutate } = usePosts(undefined, 20, sort);
+
+  const handleSort = useCallback((s: 'hot' | 'new' | 'top') => setSort(s), []);
+  const handleRefresh = useCallback(() => mutate(), [mutate]);
 
   return (
     <div>
@@ -22,7 +25,7 @@ export function HomeFeed() {
           {SORTS.map((s) => (
             <button
               key={s.key}
-              onClick={() => setSort(s.key)}
+              onClick={() => handleSort(s.key)}
               className={cn(
                 'rounded-btn px-3 py-1 text-sm font-medium transition-colors',
                 sort === s.key
@@ -36,7 +39,7 @@ export function HomeFeed() {
         </div>
         <div className="ml-auto text-xs text-text-muted">{posts.length} clips</div>
         <button
-          onClick={() => mutate()}
+          onClick={handleRefresh}
           className="rounded p-1.5 text-text-muted transition-colors hover:bg-sidebar-hover hover:text-text-primary"
           title="Refresh"
         >

@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 
 type SkeletonVariant = 'text' | 'card' | 'avatar' | 'media';
 
-export function Skeleton({
+export const Skeleton = memo(function Skeleton({
   variant = 'text',
   className,
   lines = 1,
@@ -63,4 +64,4 @@ export function Skeleton({
       ))}
     </div>
   );
-}
+});

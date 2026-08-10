@@ -14,7 +14,7 @@ Open-source gaming clip platform. Share clips and screenshots, tag them by game 
 - **Real-time presence** — Online/idle/offline status with Redis-backed pub/sub
 - **Background worker** — BullMQ job queue for video transcoding, thumbnail generation, and HLS packaging
 - **Desktop app** — Cross-platform Tauri client (Windows, macOS, Linux) with auto-updates
-- **Auth** — Email/password, Google, Discord, and Steam OAuth via NextAuth v5
+- **Auth** — Google and Discord OAuth via NextAuth v5
 - **Storage quotas** — Per-user storage limits with usage tracking
 
 ## Tech Stack
@@ -43,8 +43,8 @@ The fastest way to run ClipDeck in production:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/clipdeck.git
-cd clipdeck
+git clone https://github.com/nathanielgrantent/ClipDeck.git
+cd ClipDeck
 
 # Create your .env file
 cp apps/web/.env.example apps/web/.env
@@ -132,12 +132,22 @@ All environment variables are documented in `apps/web/.env.example`. Key variabl
 | `REDIS_URL` | No | Redis connection for BullMQ (worker) and presence |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | No | Google OAuth credentials |
 | `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | No | Discord OAuth credentials |
-| `AUTH_STEAM_API_KEY` | No | Steam API key for game data |
 | `NEXT_PUBLIC_APP_URL` | No | Public URL (default: `http://localhost:3000`) |
 | `NEXT_PUBLIC_SITE_NAME` | No | Site name (default: `ClipDeck`) |
 | `UPLOAD_DIR` | No | Upload storage directory (default: `/data/uploads`) |
 | `RAWG_API_KEY` | No | RAWG.io API key for game metadata sync |
 | `FFMPEG_PATH` | No | Path to ffmpeg binary (auto-detected if empty) |
+| `GITHUB_REPO` | No | GitHub repo URL for desktop release downloads |
+
+## Desktop App Downloads
+
+Download the latest release for your platform from the [Downloads page](https://cancelled-constant-clusters-furthermore.trycloudflare.com/download) or from [GitHub Releases](https://github.com/nathanielgrantent/ClipDeck/releases).
+
+| Platform | Format | Link |
+|----------|--------|------|
+| Windows | Installer (.exe) | [Download](https://github.com/nathanielgrantent/ClipDeck/releases/latest/download/ClipDeck-Setup-1.0.0.exe) |
+| macOS | Disk Image (.dmg) | [Download](https://github.com/nathanielgrantent/ClipDeck/releases/latest/download/ClipDeck-1.0.0.dmg) |
+| Linux | AppImage | [Download](https://github.com/nathanielgrantent/ClipDeck/releases/latest/download/ClipDeck-1.0.0.AppImage) |
 
 ## Project Structure
 

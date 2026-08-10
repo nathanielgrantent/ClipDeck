@@ -4,10 +4,16 @@ import { json, badRequest, readJson, unauthorized, forbidden } from '@/lib/api';
 import { modActionSchema } from '@/lib/validation';
 import { canModerate, isSiteAdmin } from '@/lib/moderators';
 import { logAction, notifyUser } from '@/lib/moderation';
+import { rateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
+
+  const rl = await rateLimit(`rl:mod:action:${session.user.id}`, 60_000, 30);
+  if (!rl.allowed) {
+    return json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
+  }
 
   const body = await readJson<Record<string, unknown>>(req);
   if (!body) return badRequest();

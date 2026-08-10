@@ -24,7 +24,7 @@ export async function TopCommunities() {
               className="flex items-center gap-2 rounded-btn px-2 py-1.5 transition-colors hover:bg-sidebar-hover"
             >
               {c.avatarUrl ? (
-                <img src={c.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
+                <img src={c.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
                   {c.name.slice(0, 2).toUpperCase()}

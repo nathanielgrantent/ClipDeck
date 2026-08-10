@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { badRequest, json, unauthorized } from '@/lib/api';
 import { MAX_UPLOAD_BYTES } from '@gamingclips/shared';
+import { rateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska']);
@@ -10,6 +11,11 @@ const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime', 'vide
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return unauthorized();
+
+  const rl = await rateLimit(`rl:upload:create:${session.user.id}`, 60_000, 10);
+  if (!rl.allowed) {
+    return json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
+  }
 
   let body: { fileName?: string; fileSize?: number; contentType?: string };
   try {
@@ -65,6 +71,6 @@ export async function POST(req: Request) {
       mediaType: type,
       maxBytes: MAX_UPLOAD_BYTES,
     },
-    { status: 201 },
+    { status: 201, headers: rateLimitHeaders(rl) },
   );
 }

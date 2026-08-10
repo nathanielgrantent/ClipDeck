@@ -1,20 +1,20 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { COMMENT_INCLUDE } from '@/lib/prisma-constants';
 import { serializeComment } from '@/lib/serializers';
 import { json, badRequest, readJson, unauthorized } from '@/lib/api';
 import { createCommentSchema } from '@/lib/validation';
 import { buildContentContext, evaluateRules } from '@/lib/automod';
 import { applyVerdict, loadRules, notifyUser } from '@/lib/moderation';
 import { isBanned } from '@/lib/moderators';
+import { rateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
-const COMMENT_INCLUDE = {
-  author: true,
-  _count: { select: { children: true } },
-} as const;
+type CommentRecord = Awaited<ReturnType<typeof prisma.comment.findMany>>[number];
+type CommentTreeNode = CommentRecord & { children: CommentTreeNode[] };
 
-function buildTree(comments: Awaited<ReturnType<typeof prisma.comment.findMany>>): any[] {
-  const map = new Map<string, any>();
-  const roots: any[] = [];
+function buildTree(comments: CommentRecord[]): CommentTreeNode[] {
+  const map = new Map<string, CommentTreeNode>();
+  const roots: CommentTreeNode[] = [];
   for (const c of comments) {
     map.set(c.id, { ...c, children: [] });
   }
@@ -45,12 +45,13 @@ export async function GET(req: Request) {
   if (session?.user?.id) {
     const votes = await prisma.vote.findMany({
       where: { userId: session.user.id, commentId: { in: comments.map((c) => c.id) } },
+      select: { commentId: true, value: true },
     });
     for (const v of votes) voteMap.set(v.commentId!, v.value as 1 | -1);
   }
 
   const tree = buildTree(comments).map((n) =>
-    serializeComment({ ...n, vote: voteMap.get(n.id) ?? 0 }),
+    serializeComment({ ...n, vote: voteMap.get(n.id) ?? 0 } as import('@/lib/serializers').CommentNode),
   );
 
   return json(tree);
@@ -61,6 +62,11 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return unauthorized();
   if (await isBanned(session.user.id)) {
     return json({ error: 'Your account is banned.' }, { status: 403 });
+  }
+
+  const rl = await rateLimit(`rl:comment:create:${session.user.id}`, 60_000, 20);
+  if (!rl.allowed) {
+    return json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
   }
 
   const body = await readJson<Record<string, unknown>>(req);

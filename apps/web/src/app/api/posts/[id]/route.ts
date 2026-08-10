@@ -1,16 +1,9 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { POST_INCLUDE } from '@/lib/prisma-constants';
 import { serializePost } from '@/lib/serializers';
-import { json, notFound, unauthorized } from '@/lib/api';
+import { json, notFound, unauthorized, forbidden } from '@/lib/api';
 import { canModerate } from '@/lib/moderators';
-
-const POST_INCLUDE = {
-  author: true,
-  community: { include: { _count: { select: { subscriptions: true, posts: true } } } },
-  games: { include: { game: true } },
-  media: true,
-  _count: { select: { comments: true } },
-} as const;
 
 export async function GET(
   req: Request,
@@ -54,15 +47,19 @@ export async function DELETE(
   if (!post) return notFound('Post not found');
 
   const isAuthor = post.authorId === session.user.id;
-  const isMod = await canModerate(session, (await prisma.community.findUnique({ where: { id: post.communityId } }))!.slug);
+  const community = await prisma.community.findUnique({ where: { id: post.communityId } });
+  if (!community) return notFound('Community not found');
+  const isMod = await canModerate(session, community.slug);
 
-  if (!isAuthor && !isMod) return json({ error: 'Forbidden' }, { status: 403 });
+  if (!isAuthor && !isMod) return forbidden();
+
+  // Query assets BEFORE deleting the post (onDelete: SetNull clears postId)
+  const assets = await prisma.mediaAsset.findMany({ where: { postId: id } });
+  const freed = assets.reduce((s, a) => s + Number(a.sizeBytes), 0);
 
   await prisma.post.delete({ where: { id } });
 
   // release storage
-  const assets = await prisma.mediaAsset.findMany({ where: { postId: id } });
-  const freed = assets.reduce((s, a) => s + Number(a.sizeBytes), 0);
   if (freed > 0) {
     await prisma.user.update({
       where: { id: post.authorId },

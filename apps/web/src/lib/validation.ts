@@ -30,7 +30,6 @@ export const createCommentSchema = z.object({
 });
 
 export const voteSchema = z.object({
-  postId: cuid,
   value: z.union([z.literal(1), z.literal(-1), z.literal(0)]),
 });
 
@@ -60,6 +59,25 @@ export const automodRuleSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  username: z.string().trim().min(2).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
-  avatarUrl: z.string().url().optional(),
+  username: z
+    .string()
+    .trim()
+    .min(2)
+    .max(30)
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username must contain only letters, numbers, and underscores')
+    .optional(),
+  avatarUrl: z
+    .string()
+    .url('Invalid URL format')
+    .max(2048)
+    .refine(
+      (url) => /^https?:\/\//.test(url),
+      'Avatar URL must use HTTP or HTTPS protocol',
+    )
+    .optional(),
+});
+
+export const markNotificationSchema = z.object({
+  markAll: z.boolean().optional(),
+  id: cuid.optional(),
 });

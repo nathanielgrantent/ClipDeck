@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { usePost } from '@/hooks';
@@ -10,11 +11,24 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn, timeAgo, platformLabel } from '@/lib/utils';
 import { apiPost } from '@/lib/client';
-import { VideoPlayer } from '@/components/posts/video-player';
 import { VoteButtons } from '@/components/posts/vote-buttons';
 import { formatBytes } from '@gamingclips/shared';
 import Link from 'next/link';
 import type { Comment } from '@gamingclips/shared';
+
+const VideoPlayer = dynamic(
+  () => import('@/components/posts/video-player').then((m) => m.VideoPlayer),
+  {
+    loading: () => (
+      <div className="relative w-full bg-black rounded-card overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+        </div>
+      </div>
+    ),
+    ssr: false,
+  },
+);
 
 function CommentItem({
   comment,
@@ -230,8 +244,8 @@ function PostSkeleton() {
   );
 }
 
-export default function PostDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { post, isLoading, error } = usePost(id);
   const { status } = useSession();
   const router = useRouter();

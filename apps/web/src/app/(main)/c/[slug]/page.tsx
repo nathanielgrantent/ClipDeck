@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState, use } from 'react';
 import { useCommunity, usePosts } from '@/hooks';
 import { AppShell } from '@/components/layout/app-shell';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -96,6 +96,7 @@ function CommunityHeader({
             src={community.bannerUrl}
             alt=""
             className="h-full w-full object-cover"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
@@ -140,13 +141,28 @@ function PostSkeleton() {
   );
 }
 
-export default function CommunityPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const [sort, setSort] = useState<SortKey>('hot');
   const { community, isLoading: communityLoading, error: communityError } = useCommunity(slug);
   const { posts, isLoading: postsLoading } = usePosts(slug, 50);
   const { status } = useSession();
   const [subscribed, setSubscribed] = useState(false);
+
+  const toggleSubscribe = useCallback(async () => {
+    if (status !== 'authenticated') {
+      window.location.href = '/login';
+      return;
+    }
+    try {
+      await apiPost(`/api/communities/${slug}/subscribe`);
+      setSubscribed((s) => !s);
+    } catch {
+      // silent
+    }
+  }, [slug, status]);
+
+  const handleSort = useCallback((key: SortKey) => setSort(key), []);
 
   if (communityLoading) {
     return (
@@ -184,19 +200,6 @@ export default function CommunityPage({ params }: { params: { slug: string } }) 
     );
   }
 
-  async function toggleSubscribe() {
-    if (status !== 'authenticated') {
-      window.location.href = '/login';
-      return;
-    }
-    try {
-      await apiPost(`/api/communities/${slug}/subscribe`);
-      setSubscribed((s) => !s);
-    } catch {
-      // silent
-    }
-  }
-
   return (
     <AppShell activeSlug={slug}>
       <div className="p-4 sm:p-6">
@@ -210,7 +213,7 @@ export default function CommunityPage({ params }: { params: { slug: string } }) 
           {SORT_TABS.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setSort(tab.key)}
+              onClick={() => handleSort(tab.key)}
               className={cn(
                 'rounded-btn px-3 py-1.5 text-xs font-medium transition-colors',
                 sort === tab.key ? 'bg-accent text-white' : 'text-text-secondary hover:text-text-primary',

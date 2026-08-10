@@ -21,15 +21,17 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [formReady, setFormReady] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login');
   }, [status, router]);
 
-  const formInitialized = me !== null && username !== '' || me === null;
-  if (me && !formInitialized) {
-    setUsername(me.username);
-    setAvatarUrl(me.avatarUrl || '');
+  const meRef = me;
+  if (meRef && !formReady) {
+    setUsername(meRef.username);
+    setAvatarUrl(meRef.avatarUrl || '');
+    setFormReady(true);
   }
 
   if (status === 'loading' || isLoading) {

@@ -1,19 +1,12 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { POST_INCLUDE } from '@/lib/prisma-constants';
 import { serializePost, serializeComment } from '@/lib/serializers';
 import { json, unauthorized } from '@/lib/api';
 import { canModerate } from '@/lib/moderators';
 import { parseStringArray } from '@gamingclips/shared';
 
-export const POST_INCLUDE = {
-  author: true,
-  community: { include: { _count: { select: { subscriptions: true, posts: true } } } },
-  games: { include: { game: true } },
-  media: true,
-  _count: { select: { comments: true } },
-} as const;
-
-const COMMENT_INCLUDE = { author: true, _count: { select: { children: true } }, post: true } as const;
+const MOD_QUEUE_COMMENT_INCLUDE = { author: true, _count: { select: { children: true } }, post: true } as const;
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -39,7 +32,7 @@ export async function GET(req: Request) {
     where,
     include: {
       post: { include: POST_INCLUDE },
-      comment: { include: COMMENT_INCLUDE },
+      comment: { include: MOD_QUEUE_COMMENT_INCLUDE },
     },
     orderBy: { createdAt: 'asc' },
     take: 100,
@@ -60,7 +53,7 @@ export async function GET(req: Request) {
         status: item.status,
         createdAt: item.createdAt.toISOString(),
         community: community ? { slug: community.slug, name: community.name } : null,
-        target: item.kind === 'POST' && item.post ? serializePost(item.post) : item.comment ? serializeComment(item.comment) : null,
+        target: item.kind === 'POST' && item.post ? serializePost(item.post) : item.comment ? serializeComment(item.comment as import('@/lib/serializers').CommentNode) : null,
       };
     }),
   );

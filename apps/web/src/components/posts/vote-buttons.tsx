@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { apiPost } from '@/lib/client';
 import { useSession } from 'next-auth/react';
 
-export function VoteButtons({
+export const VoteButtons = memo(function VoteButtons({
   postId,
   score: initialScore,
   vote: initialVote,
@@ -93,4 +93,4 @@ export function VoteButtons({
       </button>
     </div>
   );
-}
+});

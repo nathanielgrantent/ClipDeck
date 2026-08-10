@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ function sortComments(comments: Comment[], mode: SortMode): Comment[] {
   }
 }
 
-function CommentNode({
+const CommentNode = memo(function CommentNode({
   comment,
   postId,
   depth = 0,
@@ -128,7 +128,7 @@ function CommentNode({
       </div>
     </div>
   );
-}
+});
 
 export function CommentThread({
   postId,
@@ -139,7 +139,9 @@ export function CommentThread({
 }) {
   const [sort, setSort] = useState<SortMode>('hot');
 
-  const sorted = sortComments(comments, sort);
+  const sorted = useMemo(() => sortComments(comments, sort), [comments, sort]);
+
+  const handleSort = useCallback((s: SortMode) => setSort(s), []);
 
   return (
     <div>
@@ -149,7 +151,7 @@ export function CommentThread({
         {(['hot', 'new', 'top'] as const).map((s) => (
           <button
             key={s}
-            onClick={() => setSort(s)}
+            onClick={() => handleSort(s)}
             className={cn(
               'px-2.5 py-1 rounded-btn text-xs font-medium transition-colors',
               sort === s

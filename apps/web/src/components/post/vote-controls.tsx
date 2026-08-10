@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { apiPost } from '@/lib/client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 
-export function VoteControls({
+export const VoteControls = memo(function VoteControls({
   postId,
   commentId,
   initialScore,
@@ -30,11 +30,12 @@ export function VoteControls({
       if (pending) return;
       const newVote = userVote === value ? 0 : value;
       const delta = newVote - userVote;
+      const newScore = score + delta;
 
       setPending(true);
       setUserVote(newVote);
-      setScore((s) => s + delta);
-      onScoreChange?.(score + delta, newVote);
+      setScore(newScore);
+      onScoreChange?.(newScore, newVote);
 
       try {
         const endpoint = postId
@@ -43,7 +44,7 @@ export function VoteControls({
         await apiPost<{ score: number; vote: 1 | -1 | 0 }>(endpoint, { value: newVote });
       } catch {
         setUserVote(userVote);
-        setScore((s) => s - delta);
+        setScore(score);
         onScoreChange?.(score, userVote);
         addToast('error', 'Failed to vote');
       } finally {
@@ -148,4 +149,4 @@ export function VoteControls({
       </button>
     </div>
   );
-}
+});

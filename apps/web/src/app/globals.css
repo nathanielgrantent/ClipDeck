@@ -16,6 +16,27 @@ body {
   @apply bg-content-darker text-text-primary antialiased;
 }
 
+/* Containment for list items to prevent layout thrashing */
+@layer utilities {
+  .contain-layout {
+    contain: layout;
+  }
+  .contain-content {
+    contain: content;
+  }
+  .contain-strict {
+    contain: layout style paint;
+  }
+}
+
+/* Will-change hints for animated elements */
+.will-change-transform {
+  will-change: transform;
+}
+.will-change-opacity {
+  will-change: opacity;
+}
+
 /* Minimal scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
