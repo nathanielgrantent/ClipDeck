@@ -61,7 +61,7 @@ echo "  Worker URL: $WORKER_URL"
 echo "[4/4] Setting initial target URL..."
 TUNNEL_URL=$(grep -oP 'AUTH_URL="\K[^"]+' "$SCRIPT_DIR/../apps/web/.env" || true)
 if [ -n "$TUNNEL_URL" ]; then
-  wrangler kv key put --binding=OAUTH_KV target-url "$TUNNEL_URL"
+  wrangler kv key put --binding=OAUTH_KV --remote target-url "$TUNNEL_URL"
   echo "  Target: $TUNNEL_URL ✓"
 else
   echo "  WARNING: No AUTH_URL found in .env. Run scripts/restart-tunnel.sh first."

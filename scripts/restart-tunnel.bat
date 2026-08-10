@@ -36,7 +36,7 @@ powershell -Command "(Get-Content '%ENV_FILE%') -replace 'NEXT_PUBLIC_APP_URL=\"
 echo [5/5] Checking OAuth proxy...
 if exist "%PROXY_DIR%\wrangler.toml" (
     cd /d "%PROXY_DIR%"
-    wrangler kv key put --binding=OAUTH_KV target-url "%NEW_URL%" >nul 2>&1 && (
+    wrangler kv key put --binding=OAUTH_KV --remote target-url "%NEW_URL%" >nul 2>&1 && (
         echo    OAuth proxy updated
         for /f "tokens=2 delims==" %%b in ('findstr "^name" wrangler.toml') do set WORKER_NAME=%%~b
         echo    Fixed OAuth URL: https://%WORKER_NAME%.workers.dev

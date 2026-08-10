@@ -15,7 +15,7 @@ fi
 echo "Updating OAuth proxy target to: $NEW_URL"
 
 cd "$PROXY_DIR"
-wrangler kv key put --binding=OAUTH_KV target-url "$NEW_URL"
+wrangler kv key put --binding=OAUTH_KV --remote target-url "$NEW_URL"
 
 echo "OAuth proxy updated ✓"
 echo "All OAuth callbacks will now redirect to: $NEW_URL"

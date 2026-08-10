@@ -53,7 +53,7 @@ sed -i "s|AUTH_URL=\"[^\"]*\"|AUTH_URL=\"$NEW_URL\"|g" "$ENV_FILE"
 echo "[5/5] Checking OAuth proxy..."
 if [ -f "$PROXY_DIR/wrangler.toml" ] && grep -q "kv_namespaces" "$PROXY_DIR/wrangler.toml" 2>/dev/null; then
   cd "$PROXY_DIR"
-  wrangler kv key put --binding=OAUTH_KV target-url "$NEW_URL" 2>/dev/null && {
+  wrangler kv key put --binding=OAUTH_KV --remote target-url "$NEW_URL" 2>/dev/null && {
     echo "   OAuth proxy updated ✓"
     WORKER_NAME=$(grep '^name' wrangler.toml | cut -d'"' -f2)
     echo "   Fixed OAuth URL: https://${WORKER_NAME}.workers.dev"
