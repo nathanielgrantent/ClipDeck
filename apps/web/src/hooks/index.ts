@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import type { Community, Me, Post } from '@gamingclips/shared';
 import { apiGet } from '@/lib/client';
 
+export { useKeyboardNavigation, useFocusTrap } from './use-keyboard-navigation';
+
 const SWR_DEFAULTS = {
   revalidateOnFocus: false,
   dedupingInterval: 5000,

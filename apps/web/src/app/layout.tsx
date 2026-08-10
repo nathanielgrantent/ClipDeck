@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { SessionProvider } from '@/components/auth/session-provider';
+import { AccessibilityProvider } from '@/components/accessibility/accessibility-provider';
 
 export const metadata: Metadata = {
   title: {
@@ -20,7 +21,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body className="h-screen w-screen overflow-hidden">
-        <SessionProvider>{children}</SessionProvider>
+        <a href="#main-content" className="skip-nav">
+          Skip to main content
+        </a>
+        <div
+          id="aria-live-region"
+          className="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+          role="status"
+        />
+        <SessionProvider>
+          <AccessibilityProvider>
+            {children}
+          </AccessibilityProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -80,6 +80,8 @@ export const VoteControls = memo(function VoteControls({
             userVote === -1 && 'text-downvote',
             userVote === 0 && 'text-text-muted',
           )}
+          aria-live="polite"
+          aria-atomic="true"
         >
           {score}
         </span>

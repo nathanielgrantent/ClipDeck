@@ -133,7 +133,7 @@ export function UploadForm() {
 
   return (
     <form onSubmit={submit} className="max-w-2xl mx-auto space-y-6 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-text-primary">Upload a clip or image</h1>
+      <h2 className="text-xl font-bold text-text-primary">Upload a clip or image</h2>
 
       {/* Drop zone */}
       <div

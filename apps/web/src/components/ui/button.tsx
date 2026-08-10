@@ -7,14 +7,19 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent-soft';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   loading?: boolean;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'secondary', size = 'md', loading, disabled, children, ...props }, ref) => {
+  ({ className, variant = 'secondary', size = 'md', loading, disabled, children, 'aria-label': ariaLabel, 'aria-describedby': ariaDescribedBy, ...props }, ref) => {
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
+        aria-busy={loading}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
         className={cn(
           size === 'sm' && 'px-2.5 py-1.5 text-xs',
           size === 'md' && 'px-4 py-2 text-sm',
@@ -30,20 +35,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {loading ? <Spinner className="h-4 w-4" /> : children}
+        {loading ? <Spinner className="h-4 w-4" aria-hidden="true" /> : children}
       </button>
     );
   },
 );
 Button.displayName = 'Button';
 
-export function Spinner({ className }: { className?: string }) {
+export function Spinner({ className, ...props }: React.SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       className={cn('animate-spin', className)}
       viewBox="0 0 24 24"
       fill="none"
-      aria-label="loading"
+      role="img"
+      aria-label="Loading"
+      {...props}
     >
       <circle
         className="opacity-25"
