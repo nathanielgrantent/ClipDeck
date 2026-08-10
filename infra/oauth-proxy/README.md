@@ -40,12 +40,12 @@ Go to your OAuth consoles and add the worker URL:
 
 **Google** (https://console.cloud.google.com/apis/credentials):
 ```
-https://clipdeck-oauth-proxy.workers.dev/callback/google
+https://clipdeck-oauth-proxy.workers.dev/api/auth/callback/google
 ```
 
 **Discord** (https://discord.com/developers/applications → OAuth2 → Redirects):
 ```
-https://clipdeck-oauth-proxy.workers.dev/callback/discord
+https://clipdeck-oauth-proxy.workers.dev/api/auth/callback/discord
 ```
 
 ### Update your .env
