@@ -1,0 +1,14 @@
+{
+  "name": "clipdeck-oauth-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "update-target": "wrangler kv key put --binding=OAUTH_KV target-url",
+    "get-target": "wrangler kv key get --binding=OAUTH_KV target-url",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
